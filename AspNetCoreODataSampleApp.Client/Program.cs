@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace AspNetCoreODataSampleApp.Client
@@ -14,10 +15,29 @@ namespace AspNetCoreODataSampleApp.Client
                 BaseAddress = new Uri("https://localhost:5001/")
             };
 
-            var customers1 = await httpClient.GetFromJsonAsync<CustomerDto[]>("customers");
-            var customers2 = await httpClient.GetFromJsonAsync<CustomerDto[]>("customers?$filter=Gender eq 'Woman'");
-            var customers3 = await httpClient.GetFromJsonAsync<CustomerDto[]>("customers?$filter=Gender eq 'Woman'&$orderby=Address/StreetNo");
-            var customers4 = await httpClient.GetFromJsonAsync<CustomerDto[]>("customers?$filter=contains(FirstName,'Ali')");
+            var customers1 = await httpClient.GetStringAsync("api/customers");
+            var customers2 = await httpClient.GetStringAsync("api/customers?$filter=Gender eq 'Woman'");
+            var customers3 = await httpClient.GetStringAsync("api/customers?$filter=Gender eq 'Woman'&$orderby=Address/StreetNo");
+            var customers4 = await httpClient.GetStringAsync("api/customers?$filter=contains(FirstName,'Ali')");
+
+            var batchResponse = await httpClient.PostAsync("api/$batch", new StringContent(@"
+{
+    ""requests"": [
+        {
+            ""id"": ""1"",
+            ""method"": ""GET"",
+            ""url"": ""https://localhost:5001/api/customers?$filter=Gender eq 'Woman'""
+        },
+        {
+            ""id"": ""2"",
+            ""method"": ""GET"",
+            ""url"": ""https://localhost:5001/api/customers?$filter=contains(FirstName,'Ali')""
+        }
+    ]
+}"
+                , Encoding.UTF8, "application/json"));
+
+            var batchResponseString = await batchResponse.Content.ReadAsStringAsync();
         }
     }
 

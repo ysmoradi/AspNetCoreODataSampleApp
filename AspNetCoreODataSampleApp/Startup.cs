@@ -4,6 +4,10 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNet.OData.Extensions;
+using Microsoft.AspNet.OData.Batch;
+using Microsoft.OData.Edm;
+using AspNetCoreODataSampleApp.Dto;
+using Microsoft.AspNet.OData.Builder;
 
 namespace AspNetCoreODataSampleApp
 {
@@ -29,6 +33,8 @@ namespace AspNetCoreODataSampleApp
                 app.UseDeveloperExceptionPage();
             }
 
+            app.UseODataBatching();
+
             app.UseHttpsRedirection();
 
             app.UseRouting();
@@ -38,9 +44,20 @@ namespace AspNetCoreODataSampleApp
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
-                endpoints.EnableDependencyInjection();
                 endpoints.Select().Expand().Filter().OrderBy().Count().MaxTop(20);
+                endpoints.EnableDependencyInjection();
+                endpoints.MapODataRoute(routeName: "api", routePrefix: "api", GetEdmModel(),
+                    batchHandler: new DefaultODataBatchHandler());
             });
+        }
+
+        IEdmModel GetEdmModel()
+        {
+            var odataBuilder = new ODataConventionModelBuilder();
+
+            odataBuilder.EntitySet<CustomerDto>("Customers");
+
+            return odataBuilder.GetEdmModel();
         }
     }
 }
